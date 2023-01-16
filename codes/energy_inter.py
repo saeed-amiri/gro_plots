@@ -28,6 +28,7 @@ class GetXvg:
         data_arr: np.array  # Array of data
         data_arr = self.__read_data(data_dict['data'])
         data_dict['data'] = data_arr
+        data_dict['average']: float = self.get_average(data_dict['data'])
         return data_dict
 
     def __read_data(self,
@@ -101,13 +102,20 @@ class GetXvg:
                 axis = 'legend'
         return axis, label
 
+    def get_average(self,
+                    x: np.array  # Data to get average from
+                    ) -> float:
+        return np.average(x)
+
 
 if __name__ == "__main__":
     xvg_files: list = sys.argv[1:]
     for f in xvg_files:
         xvg = GetXvg(f)
+
         plt.plot(xvg.data['data'][0],
-                 xvg.data['data'][1], label=xvg.data['legend'])
+                 xvg.data['data'][1],
+                 label=f'{xvg.data["legend"]}, ave={xvg.data["average"]:.3f}')
     plt.xlabel(xvg.data['xaxis'])
     plt.ylabel(xvg.data['yaxis'])
     plt.legend()
