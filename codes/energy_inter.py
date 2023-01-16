@@ -1,6 +1,7 @@
 import re
 import sys
 import typing
+import numpy as np
 import pandas as pd
 from colors_text import TextColor as bcolors
 
@@ -24,16 +25,21 @@ class GetXvg:
                    fname: str  # Name of the input file
                    ) -> pd.DataFrame:
         data_dict: dict[str, typing.Any] = self.__get_header(fname)
-        self.__read_data(data_dict['nHeader'], data_dict['data'])
+        data_arr: np.array  # Array of data
+        data_arr = self.__read_data(data_dict['data'])
+        data_dict['data'] = data_arr
 
     def __read_data(self,
-                    nHeader: int,  # Number of lines in the header to scape
                     data: list[str]  # Unbrocken lines of data
-                    ) -> pd.DataFrame:
-        time: list[float]  # 1st column of the data file
-        energy: list[float]  # 2nd column of the data file
-        for item in data:
+                    ) -> np.array:
+        data_arr: np.array  # Array to save data
+        data_arr = np.zeros((2, len(data)))
+        for ind, item in enumerate(data):
             tmp_list = [i for i in item.split(' ') if i]
+            data_arr[0][ind] = float(tmp_list[0])
+            data_arr[1][ind] = float(tmp_list[1])
+            del tmp_list
+        return data_arr
 
     def __get_header(self,
                      fname: str  # Name of the xvg 25
