@@ -4,7 +4,7 @@ import typing
 import numpy as np
 import pandas as pd
 from colors_text import TextColor as bcolors
-
+import matplotlib.pylab as plt
 
 class Doc:
     """plot energy output of GROMACS from command li:
@@ -19,18 +19,19 @@ class GetXvg:
     def __init__(self,
                  fname: str  # Name of the input file
                  ) -> None:
-        self.__read_xvg(fname)
+        self.data: dict = self.__read_xvg(fname)
 
     def __read_xvg(self,
                    fname: str  # Name of the input file
-                   ) -> pd.DataFrame:
-        data_dict: dict[str, typing.Any] = self.__get_header(fname)
+                   ) -> dict:
+        data_dict: dict = self.__get_header(fname)
         data_arr: np.array  # Array of data
         data_arr = self.__read_data(data_dict['data'])
         data_dict['data'] = data_arr
+        return data_dict
 
     def __read_data(self,
-                    data: list[str]  # Unbrocken lines of data
+                    data: list  # Unbrocken lines of data
                     ) -> np.array:
         data_arr: np.array  # Array to save data
         data_arr = np.zeros((2, len(data)))
@@ -43,7 +44,7 @@ class GetXvg:
 
     def __get_header(self,
                      fname: str  # Name of the xvg 25
-                     ) -> dict[str, typing.Any]:
+                     ) -> dict:
         """read header of xvg file, lines which started with `@`"""
         print(f'{bcolors.OKBLUE}{self.__class__.__name__}:\n'
               f'\tReading file : {fname}\n{bcolors.ENDC}')
@@ -51,7 +52,7 @@ class GetXvg:
         linecount: int = 0  # Tracking number of lines with `@`
         header_line: int = 0  # Number of header lines
         data_dict: dict = dict()  # Contains all the labels from xvg file
-        data: list[str] = []  # Lines contains numberic data
+        data: list = []  # Lines contains numberic data
         with open(fname, 'r') as f:
             while True:
                 linecount += 1
@@ -81,9 +82,9 @@ class GetXvg:
 
     def __process_line(self,
                        line: str  # Line start with `@`
-                       ) -> tuple[str]:
+                       ) -> tuple:
         """get labels from the lines"""
-        l_line: list[str]  # Breaking the line
+        l_line: list  # Breaking the line
         l_line = line.split('@')[1].split(' ')
         l_line = [item for item in l_line if item]
         axis: str = None  # Label of the axis
@@ -102,4 +103,12 @@ class GetXvg:
 
 
 if __name__ == "__main__":
-    xvg = GetXvg(sys.argv[1])
+    xvg_files: list = sys.argv[1:]
+    for f in xvg_files:
+        xvg = GetXvg(f)
+        plt.plot(xvg.data['data'][0],
+                 xvg.data['data'][1], label=xvg.data['legend'])
+    plt.xlabel(xvg.data['xaxis'])
+    plt.ylabel(xvg.data['yaxis'])
+    plt.legend()
+    plt.show()
