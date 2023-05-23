@@ -1,3 +1,9 @@
+"""plot energy output of GROMACS from command line:
+    `gmx_mpi density -s npt.tpr -f npt.trr -n index.ndx'
+    Input:
+    Any number of input file with xvg extensions
+    """
+
 import re
 import sys
 import typing
@@ -5,13 +11,44 @@ import numpy as np
 import pandas as pd
 from colors_text import TextColor as bcolors
 import matplotlib.pylab as plt
+import matplotlib as mpl
 
-class Doc:
-    """plot energy output of GROMACS from command line:
-    `gmx_mpi density -s npt.tpr -f npt.trr -n index.ndx'
-    Input:
-    Any number of input file with xvg extensions
-    """
+
+def set_sizes(width, fraction=1):
+    """set figure dimennsion"""
+    fig_width_pt = width*fraction
+    inches_per_pt = 1/72.27
+    golden_ratio = (5**0.5 - 1)/2
+    fig_width_in = fig_width_pt * inches_per_pt
+    fig_height_in = fig_width_in * golden_ratio
+    fig_dim = (fig_width_in, fig_height_in)
+    return fig_dim
+
+# Update the rcParams with the desired configuration settings
+mpl.rcParams['axes.prop_cycle'] = \
+    plt.cycler('color', ['k', 'r', 'b', 'g']) + \
+                plt.cycler('ls', ['-', '--', ':', '-.'])
+mpl.rcParams['figure.figsize'] = (3.3, 2.5)
+mpl.rcParams['figure.dpi'] = 600
+mpl.rcParams['font.size'] = 8
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = 'Times'
+
+width = 426.79135
+fig, ax = plt.subplots(1, figsize=set_sizes(width))
+
+# Set axis style
+plt.grid(True, linestyle='--', linewidth=0.5)
+plt.tick_params(direction='in')
+
+average: bool = False  # If write average on the legend
+transparent: bool = True # If the figure wants to be transparent
+savefig_kwargs = {'fname': 'output.png',
+                  'dpi': 300,
+                  'bbox_inches': 'tight'
+                  }
+if transparent:
+    savefig_kwargs['transparent'] = 'true'
 
 
 class GetXvg:
@@ -118,11 +155,19 @@ if __name__ == "__main__":
     xvg_files: list = sys.argv[1:]
     for f in xvg_files:
         xvg = GetXvg(f)
+        label = f'{xvg.data["fname"]}'
+        if average:
+            label += f', ave={xvg.data["average"]:.3f}'
 
-        plt.plot(xvg.data['data'][0],
-                 xvg.data['data'][1],
-                 label=f'{xvg.data["fname"]}, ave={xvg.data["average"]:.3f}')
+        ax.plot(xvg.data['data'][0],
+                    xvg.data['data'][1],
+                    label=label)
     plt.xlabel(xvg.data['xaxis'])
     plt.ylabel(xvg.data['yaxis'])
+
+    # Adjust tick label font size and style if needed
+    plt.xticks(fontsize=8)
+    plt.yticks(fontsize=8)
     plt.legend()
-    plt.show()
+    plt.savefig(**savefig_kwargs)
+    # plt.show()
